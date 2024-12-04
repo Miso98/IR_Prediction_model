@@ -1,49 +1,49 @@
 import tensorflow as tf
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-import matplotlib.pyplot as plt
+# images path
+dataset_path ='/home/mitchell/Documents/repos/IR_project/dataset/'
 
-# Paths to Dataset
-train_dir = 'dataset/train'
-val_dir = 'dataset/val'
 
-# Image Dimensions
-IMG_HEIGHT = 60
-IMG_WIDTH = 80
-BATCH_SIZE = 16
+# Load the training dataset with ImageDataGenerator
+train_ds = tf.keras.preprocessing.image_dataset_from_directory(
+    dataset_path + '/train',  # Adjust the directory path
+    image_size=(60, 80),  # Match the input shape
+    batch_size=32,
+    label_mode='binary'  # Assuming binary classification (irregular vs regular)
+)
 
-# Data Generators
-train_datagen = ImageDataGenerator(rescale=1.0/255, rotation_range=30, width_shift_range=0.2,
-                                   height_shift_range=0.2, zoom_range=0.2, horizontal_flip=True)
-val_datagen = ImageDataGenerator(rescale=1.0/255)
+# load the validation dataset
+val_ds = tf.keras.preprocessing.image_dataset_from_directory(
+    dataset_path + '/val',  # Adjust the directory path
+    image_size=(60, 80),
+    batch_size=32,
+    label_mode='binary'
+)
 
-train_data = train_datagen.flow_from_directory(train_dir, target_size=(IMG_HEIGHT, IMG_WIDTH),
-                                               batch_size=BATCH_SIZE, class_mode='binary')
-val_data = val_datagen.flow_from_directory(val_dir, target_size=(IMG_HEIGHT, IMG_WIDTH),
-                                           batch_size=BATCH_SIZE, class_mode='binary')
-
-# Build Model
+# Create and compile  model
 model = tf.keras.Sequential([
-    tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(IMG_HEIGHT, IMG_WIDTH, 3)),
-    tf.keras.layers.MaxPooling2D(2, 2),
-    tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
-    tf.keras.layers.MaxPooling2D(2, 2),
+    tf.keras.layers.Rescaling(1./255, input_shape=(60, 80, 3)),
+    tf.keras.layers.Conv2D(32, 3, activation='relu'),
+    tf.keras.layers.MaxPooling2D(),
+    tf.keras.layers.Conv2D(64, 3, activation='relu'),
+    tf.keras.layers.MaxPooling2D(),
+    tf.keras.layers.Conv2D(64, 3, activation='relu'),
     tf.keras.layers.Flatten(),
-    tf.keras.layers.Dense(128, activation='relu'),
-    tf.keras.layers.Dense(1, activation='sigmoid')  # Binary classification
+    tf.keras.layers.Dense(64, activation='relu'),
+    tf.keras.layers.Dense(1, activation='sigmoid')
 ])
 
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+# Compile the model
+model.compile(optimizer='adam',
+              loss='binary_crossentropy',
+              metrics=['accuracy'])
 
-# Train Model
-history = model.fit(train_data, validation_data=val_data, epochs=10)
+# Train 
+history = model.fit(train_ds, epochs=20, validation_data=val_ds)
 
-# Save Model
-model.save('saved_model/hand_classifier.h5')
+# Evaluate
+test_loss, test_acc = model.evaluate(val_ds)
+print(f"Test accuracy: {test_acc}")
 
-# Plot Training Results
-plt.plot(history.history['accuracy'], label='Training Accuracy')
-plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
-plt.xlabel('Epoch')
-plt.ylabel('Accuracy')
-plt.legend()
-plt.show()
+
+model.save('/home/mitchell/Documents/repos/IR_project/saved_model.h5')
+

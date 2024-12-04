@@ -1,10 +1,14 @@
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
+from tensorflow.keras.models import load_model
 import numpy as np
 
 # Load Model
 model_path = 'saved_model/hand_classifier.h5'
-model = tf.keras.models.load_model(model_path)
+model = tf.keras.models.load_model(('/home/mitchell/Documents/repos/IR_project/saved_model.h5')
+)
+
+img_path = '/home/mitchell/Documents/repos/IR_project/dataset/test/regular/image1.png'
 
 # Image Dimensions
 IMG_HEIGHT = 60
@@ -22,4 +26,5 @@ def predict_image(image_path):
     print(f"Prediction: {class_name} (Confidence: {prediction[0][0]:.2f})")
 
 # Test Prediction
-predict_image('path/to/image.png')
+predict_image(img_path)
+
