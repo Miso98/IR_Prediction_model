@@ -1,25 +1,27 @@
 import tensorflow as tf
-# images path
-dataset_path ='/home/mitchell/Documents/repos/IR_project/dataset/'
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
+# Paths to training and validation directories
+train_dir = '/home/mitchell/Documents/repos/IR_project/dataset/train'
+val_dir = '/home/mitchell/Documents/repos/IR_project/dataset/val'
 
-# Load the training dataset with ImageDataGenerator
+# Load datasets
 train_ds = tf.keras.preprocessing.image_dataset_from_directory(
-    dataset_path + '/train',  # Adjust the directory path
-    image_size=(60, 80),  # Match the input shape
-    batch_size=32,
-    label_mode='binary'  # Assuming binary classification (irregular vs regular)
-)
-
-# load the validation dataset
-val_ds = tf.keras.preprocessing.image_dataset_from_directory(
-    dataset_path + '/val',  # Adjust the directory path
+    train_dir,
     image_size=(60, 80),
     batch_size=32,
     label_mode='binary'
 )
 
-# Create and compile  model
+val_ds = tf.keras.preprocessing.image_dataset_from_directory(
+    val_dir,
+    image_size=(60, 80),
+    batch_size=32,
+    label_mode='binary'
+)
+
+# Create the CNN model
 model = tf.keras.Sequential([
     tf.keras.layers.Rescaling(1./255, input_shape=(60, 80, 3)),
     tf.keras.layers.Conv2D(32, 3, activation='relu'),
@@ -32,18 +34,22 @@ model = tf.keras.Sequential([
     tf.keras.layers.Dense(1, activation='sigmoid')
 ])
 
-# Compile the model
+# Compile model
 model.compile(optimizer='adam',
               loss='binary_crossentropy',
               metrics=['accuracy'])
 
-# Train 
-history = model.fit(train_ds, epochs=20, validation_data=val_ds)
+# Set up early stopping to prevent overfitting
+early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
 
-# Evaluate
+# Train model with early stopping
+history = model.fit(
+    train_ds,
+    epochs=30,  # Set the maximum number of epochs
+    validation_data=val_ds,
+    callbacks=[early_stopping]  # Add early stopping callback
+)
+
+# Evaluate the model
 test_loss, test_acc = model.evaluate(val_ds)
 print(f"Test accuracy: {test_acc}")
-
-
-model.save('/home/mitchell/Documents/repos/IR_project/saved_model.h5')
-
