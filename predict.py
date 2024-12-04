@@ -20,7 +20,7 @@ def predict_image(img_path):
         img_array = tf.expand_dims(img_array, axis=0)  # Add batch dimension
 
         prediction = model.predict(img_array)
-        label = 'irregular' if prediction < 0.5 else 'regular'  # Assuming binary classification
+        label = 'irregular' if prediction < 0.5 else 'regular'  
         confidence = prediction[0][0]  # The output is a probability for the binary case
         print(f"Prediction: {label} (Confidence: {confidence:.2f})")
 
